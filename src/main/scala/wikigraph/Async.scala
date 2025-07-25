@@ -1,8 +1,9 @@
 package wikigraph
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.impl.Promise
 import scala.concurrent.{Future, Promise}
-import scala.util.Try
+import scala.util.{Success, Try}
 import scala.util.control.NonFatal
 
 object Async:
@@ -15,8 +16,9 @@ object Async:
     * In case the given future value failed, this method should
     * return a failed future with the same error.
     */
-  def transformSuccess(eventuallyX: Future[Int]): Future[Boolean] =
-    ???
+  def transformSuccess(eventuallyX: Future[Int]): Future[Boolean] = {
+    eventuallyX map (n => n % 2 == 0)
+  }
 
   /**
     * Transforms a failed future value of type `Int` into a successful
@@ -28,7 +30,7 @@ object Async:
     * return a successful future with the same value.
     */
   def recoverFailure(eventuallyX: Future[Int]): Future[Int] =
-    ???
+    eventuallyX recover (_ => -1)
 
   /**
     * Performs two asynchronous computation, one after the other.
@@ -45,7 +47,10 @@ object Async:
     asyncComputation1: () => Future[A],
     asyncComputation2: () => Future[B]
   ): Future[(A, B)] =
-    ???
+    for {
+      answer1 <- asyncComputation1()
+      answer2 <- asyncComputation2()
+    } yield (answer1, answer2)
 
   /**
     * Concurrently performs two asynchronous computations and pair their
@@ -58,8 +63,15 @@ object Async:
   def concurrentComputations[A, B](
     asyncComputation1: () => Future[A],
     asyncComputation2: () => Future[B]
-  ): Future[(A, B)] =
-    ???
+  ): Future[(A, B)] = {
+    val answer1 = asyncComputation1()
+    val answer2 = asyncComputation2()
+
+    for {
+      a1 <- answer1
+      a2 <- answer2
+    } yield (a1, a2)
+  }
 
   /**
     * Makes a chocolate cake.
