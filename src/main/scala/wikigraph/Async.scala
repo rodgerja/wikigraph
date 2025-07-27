@@ -3,7 +3,7 @@ package wikigraph
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.impl.Promise
 import scala.concurrent.{Future, Promise}
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 object Async:
@@ -89,7 +89,11 @@ object Async:
     mixEverything: (MeltedButterAndChocolate, Eggs, Sugar) => Future[CakeDough],
     bake: CakeDough => Future[Cake]
   ): Future[Cake] =
-    ???
+    for
+      meltedButterAndChocolate <- meltButterWithChocolate(butter, chocolate)
+      cakeDough <- mixEverything(meltedButterAndChocolate, eggs, sugar)
+      cake <- bake(cakeDough)
+    yield cake
 
   /**
     * Attempts to perform an asynchronous computation at most
@@ -102,6 +106,11 @@ object Async:
     * Hint: recursively call `insist` in the failure handler.
     */
   def insist[A](asyncComputation: () => Future[A], maxAttempts: Int): Future[A] =
-    ???
+    if maxAttempts <= 0 then
+      Future.failed(Exception(s"failed"))
+    else
+      asyncComputation().recoverWith {
+        case NonFatal(_) => insist(asyncComputation, maxAttempts - 1)
+    }
 
 end Async
