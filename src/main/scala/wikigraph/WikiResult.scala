@@ -55,8 +55,13 @@ case class WikiResult[A](value: Future[Either[Seq[WikiError], A]]):
     * 
     * Hint: Both Either and Future have a similar method
     */
-  def map[B](f: A => B)(using ExecutionContext): WikiResult[B] =
-    ???
+  def map[B](f: A => B)(using ExecutionContext): WikiResult[B] = {
+    val futureB = value.map {
+      case Right(content) => Right(f(content))
+      case Left(left) => Left(left)
+    }
+    WikiResult(futureB)
+  }
 
   /**
     * Use the result of this computation as an input for another asynchronous
@@ -69,7 +74,8 @@ case class WikiResult[A](value: Future[Either[Seq[WikiError], A]]):
     */
   def flatMap[B](f: A => WikiResult[B])(using ExecutionContext): WikiResult[B] = 
     val futureB: Future[Either[Seq[WikiError], B]] = value.flatMap {
-      ???
+      case Left(errors) => Future.successful(Left(errors))
+      case Right(content) => f(content).value
     }
     WikiResult(futureB)
 
