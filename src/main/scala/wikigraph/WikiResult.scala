@@ -89,8 +89,12 @@ case class WikiResult[A](value: Future[Either[Seq[WikiError], A]]):
     * Hint: The async part has been handled for you. You need to zip the two Either 
     */
   def zip[B](that: WikiResult[B])(using ExecutionContext): WikiResult[(A, B)] =
-    def zipEithersAcc(a: Either[Seq[WikiError], A], b: Either[Seq[WikiError], B]): Either[Seq[WikiError], (A, B)] =
-      ???
+    def zipEithersAcc(a: Either[Seq[WikiError], A], b: Either[Seq[WikiError], B]): Either[Seq[WikiError], (A, B)] = (a, b) match {
+      case (Left(aErrors), Left(bErrors)) => Left( aErrors ++ bErrors)
+      case (Left(aErrors), Right(_)) => Left(aErrors)
+      case (Right(_), Left(bErrors)) => Left(bErrors)
+      case (Right(aValue), Right(bValue)) => Right((aValue, bValue))
+    }
     WikiResult(this.value.flatMap { thisEither =>
       that.value.map { thatEither =>
         zipEithersAcc(thisEither, thatEither)
@@ -148,7 +152,14 @@ object WikiResult:
     * Hint: this method is very similar to the method `validateEach` shown in the
     * lecture “Manipulating Validated Values”.
     */
-  def traverse[A, B](as: Seq[A])(f: A => WikiResult[B])(using ExecutionContext): WikiResult[Seq[B]] =
-    ???
+  def traverse[A, B](as: Seq[A])(f: A => WikiResult[B])(using ExecutionContext): WikiResult[Seq[B]] = {
+    // Future[Either[Seq[WikiError], A]]
+    val start: WikiResult[Seq[B]] = WikiResult.successful(Vector.empty)
+    as.foldLeft(start) { (accumulator, nextA) =>
+      accumulator.zip(f(nextA)).map { (listOfBs, newB) =>
+        listOfBs :+ newB
+      }
+    }
+  }
 
 end WikiResult
