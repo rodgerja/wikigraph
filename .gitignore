@@ -1,0 +1,21 @@
+# sbt/Scala
+target/
+project/target/
+project/project/
+.metals/
+.bloop/
+.bsp/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS / logs
+*.log
+
+# Your dataset (don’t commit huge data)
+enwiki-dataset/
